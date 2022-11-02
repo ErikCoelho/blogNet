@@ -454,4 +454,4 @@ $RECYCLE.BIN/
 !.vscode/extensions.json
 
 # New add
-appsettings.json
+*appsettings.json
