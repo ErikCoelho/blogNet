@@ -28,12 +28,6 @@ namespace BlogNet.Data.Mappings
                 .IsUnique();
 
             builder
-                .HasOne(x => x.AuthorId)
-                .WithMany(x => x.Posts)
-                .HasConstraintName("FK_Post_Author")
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder
                 .HasOne(x => x.Category)
                 .WithMany(x => x.Posts)
                 .HasConstraintName("FK_Post_Category")
