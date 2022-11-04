@@ -3,9 +3,9 @@ using BlogNet.Data;
 using BlogNet.Extensions;
 using BlogNet.ViewModels;
 using BlogNet.ViewModels.Posts;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 
 namespace BlogNet.Controllers
 {
@@ -52,20 +52,43 @@ namespace BlogNet.Controllers
             {
                 var posts = await context
                     .Posts
-                    .Where(x => x.Category.Slug == category)
+                    .Where(x => x.Category == category)
                     .ToListAsync();
 
                 return Ok(new ResultViewModel<dynamic>(posts));
             }
             catch(Exception ex)
             {
-                return StatusCode(500, new ResultViewModel<Post>("02X03 - Falha interna no servidor"));
+                return StatusCode(500, new ResultViewModel<List<Post>>("02X03 - Falha interna no servidor"));
             }
         }
 
+        [HttpGet("v1/posts/user")]
+        public async Task<IActionResult> GetByUserAsync(
+            [FromHeader] string userId,
+            [FromServices] BlogDataContext context)
+        {
+            try
+            {
+                var posts = await context.Posts.Where(x => x.Author == userId).ToListAsync();
+
+                if (posts == null)
+                    return NotFound(new ResultViewModel<Post>("Você não possui nenhuma publicação"));
+
+                return Ok(new ResultViewModel<dynamic>(posts));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResultViewModel<List<Post>>("02X04 - Falha interna no servidor"));
+            }
+
+        }
+
+
         [HttpPost("v1/posts")]
         public async Task<IActionResult> PostAsync(
-            [FromBody] EditorPostViewModel model,
+            [FromBody] EditPostViewModel model,
+            [FromHeader] string userId,
             [FromServices] BlogDataContext context)
         {
             try
@@ -78,7 +101,7 @@ namespace BlogNet.Controllers
                     Slug = Post.GetSlug(model.Title),
                     LastUpdateDate = DateTime.Now.ToUniversalTime(),
                     Category = model.Category,
-                    AuthorId = model.AuthorId
+                    Author = userId
                 };
                 await context.Posts.AddAsync(post);
                 await context.SaveChangesAsync();
@@ -87,19 +110,19 @@ namespace BlogNet.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, new ResultViewModel<Post>("02X04 - Não foi possível incluir a publicação"));
+                return StatusCode(500, new ResultViewModel<Post>("02X05 - Não foi possível incluir a publicação"));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResultViewModel<Post>("02X05 - Falha interna no servidor"));
+                return StatusCode(500, new ResultViewModel<Post>("02X06 - Falha interna no servidor"));
             }
         }
 
         [HttpPut("v1/posts/{id:int}")]
-        [Authorize]
         public async Task<IActionResult> PostAsync(
             [FromRoute] int id,
-            [FromBody] EditorPostViewModel model,
+            [FromHeader] string userId,
+            [FromBody] EditPostViewModel model,
             [FromServices] BlogDataContext context)
         {
             try
@@ -110,6 +133,9 @@ namespace BlogNet.Controllers
 
                 if (post == null)
                     return NotFound(new ResultViewModel<Post>("Conteúdo não encontrado"));
+
+                if (post.Author != userId)
+                    return StatusCode(500, new ResultViewModel<Post>("02X09 - Não foi possível editar a publicação"));
 
                 post.Title = model.Title;
                 post.Body = model.Body;
@@ -124,12 +150,12 @@ namespace BlogNet.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, new ResultViewModel<Post>("02X06 - Não foi possível alterar a publicação"));
+                return StatusCode(500, new ResultViewModel<Post>("02X10 - Não foi possível alterar a publicação"));
             }
 
-            catch (Exception e)
+            catch (Exception ex)
             {
-                return StatusCode(500, new ResultViewModel<Post>("02X07 - Falha interna no servidor"));
+                return StatusCode(500, new ResultViewModel<Post>("02X11 - Falha interna no servidor"));
             }
         }
 
@@ -146,9 +172,9 @@ namespace BlogNet.Controllers
                 if (post == null)
                     return NotFound(new ResultViewModel<Post>("Conteúdo não encontrado"));
 
-                if (post.AuthorId != userId)
+                if (post.Author != userId)
                 {
-                    return StatusCode(500, new ResultViewModel<Post>("02X08 - Não foi possível excluir a publicação"));
+                    return StatusCode(500, new ResultViewModel<Post>("02X12 - Não foi possível excluir a publicação"));
                 }
                 context.Posts.Remove(post);
                 await context.SaveChangesAsync();
@@ -157,12 +183,12 @@ namespace BlogNet.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, new ResultViewModel<Post>("02X09 - Não foi possível excluir a categoria"));
+                return StatusCode(500, new ResultViewModel<Post>("02X13 - Não foi possível excluir a categoria"));
             }
 
             catch (Exception ex)
             {
-                return StatusCode(500, new ResultViewModel<Post>("02X10 - Falha interna no servidor"));
+                return StatusCode(500, new ResultViewModel<Post>("02X14 - Falha interna no servidor"));
             }
         }
         

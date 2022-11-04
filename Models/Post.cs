@@ -9,10 +9,8 @@ namespace Blog.Models
         public string Body { get; set; }
         public string Slug { get; set; }
         public DateTime LastUpdateDate { get; set; }
-        public Category Category { get; set; }
-        public string AuthorId { get; set; }
-
-        public List<Tag> Tags { get; set; }
+        public string Category { get; set; }
+        public string Author { get; set; }
 
         public static string GetSlug(string str)
         {
