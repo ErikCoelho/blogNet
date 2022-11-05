@@ -1,11 +1,9 @@
 ﻿using Blog.Models;
 using BlogNet.Data;
-using BlogNet.Extensions;
 using BlogNet.ViewModels;
 using BlogNet.ViewModels.Posts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
 
 namespace BlogNet.Controllers
 {
@@ -14,12 +12,34 @@ namespace BlogNet.Controllers
     {
         [HttpGet("v1/posts")]
         public async Task<IActionResult> GetAsync (
-            [FromServices] BlogDataContext context)
+            [FromServices] BlogDataContext context,
+            [FromQuery] int page = 0,
+            [FromQuery] int pageSize = 25)
         {
             try
             {
-                var posts = await context.Posts.ToListAsync();
-                return Ok(new ResultViewModel<dynamic>(posts));
+                var count = await context.Posts.AsNoTracking().CountAsync();
+                var posts = await context
+                    .Posts
+                    .AsNoTracking()
+                    .Select(x =>
+                    new {
+                        x.Id,
+                        x.Title,
+                        x.LastUpdateDate
+                    })
+                    .Skip(page * pageSize)
+                    .Take(pageSize)
+                    .OrderByDescending(x => x.LastUpdateDate)
+                    .ToListAsync();
+
+                return Ok(new ResultViewModel<dynamic>(new
+                {
+                    total = count,
+                    page,
+                    pageSize,
+                    posts
+                }));
             }
             catch(Exception ex)
             {
@@ -46,16 +66,28 @@ namespace BlogNet.Controllers
         [HttpGet("v1/posts/category/{category}")]
         public async Task<IActionResult> GetCategoryAsync(
             [FromRoute] string category,
-            [FromServices] BlogDataContext context)
+            [FromServices] BlogDataContext context,
+            [FromQuery] int page = 0,
+            [FromQuery] int pageSize = 25)
         {
             try
             {
+                var count = await context.Posts.AsNoTracking().CountAsync();
                 var posts = await context
                     .Posts
                     .Where(x => x.Category == category)
+                    .Skip(page * pageSize)
+                    .Take(pageSize)
+                    .OrderByDescending(x => x.LastUpdateDate)
                     .ToListAsync();
 
-                return Ok(new ResultViewModel<dynamic>(posts));
+                return Ok(new ResultViewModel<dynamic>(new
+                {
+                    total = count,
+                    page,
+                    pageSize,
+                    posts
+                }));
             }
             catch(Exception ex)
             {
@@ -66,16 +98,31 @@ namespace BlogNet.Controllers
         [HttpGet("v1/posts/user")]
         public async Task<IActionResult> GetByUserAsync(
             [FromHeader] string userId,
-            [FromServices] BlogDataContext context)
+            [FromServices] BlogDataContext context,
+            [FromQuery] int page = 0,
+            [FromQuery] int pageSize = 25)
         {
             try
             {
-                var posts = await context.Posts.Where(x => x.Author == userId).ToListAsync();
+                var count = await context.Posts.AsNoTracking().CountAsync();
+                var posts = await context
+                    .Posts
+                    .Where(x => x.Author == userId)
+                    .Skip(page * pageSize)
+                    .Take(pageSize)
+                    .OrderByDescending(x => x.LastUpdateDate)
+                    .ToListAsync();
 
                 if (posts == null)
                     return NotFound(new ResultViewModel<Post>("Você não possui nenhuma publicação"));
 
-                return Ok(new ResultViewModel<dynamic>(posts));
+                return Ok(new ResultViewModel<dynamic>(new
+                {
+                    total = count,
+                    page,
+                    pageSize,
+                    posts
+                }));
             }
             catch (Exception ex)
             {

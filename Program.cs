@@ -2,12 +2,12 @@ using BlogNet.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-ConfigureService(builder);
 
-builder.Services.AddControllers();
+ConfigureService(builder);
+ConfigureMvc(builder);
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -17,11 +17,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
 
 
@@ -31,4 +28,13 @@ void ConfigureService(WebApplicationBuilder builder)
     builder.Services.AddDbContext<BlogDataContext>(
         options =>
             options.UseSqlServer(connectionString));
+}
+
+void ConfigureMvc(WebApplicationBuilder builder)
+{
+    builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.SuppressModelStateInvalidFilter = true;
+    });
 }
