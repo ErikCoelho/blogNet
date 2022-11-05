@@ -1,7 +1,9 @@
 ﻿using Blog.Models;
 using BlogNet.Data;
+using BlogNet.Extensions;
 using BlogNet.ViewModels;
 using BlogNet.ViewModels.Categories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -42,10 +44,14 @@ namespace BlogNet.Controllers
         }
 
         [HttpPost("v1/categories")]
+        [Authorize]
         public async Task<IActionResult> PostAsync(
             [FromBody] EditorCategoryViewModel model,
             [FromServices] BlogDataContext context)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(new ResultViewModel<Category>(ModelState.GetErrors()));
+
             try
             {
                 var category = new Category
@@ -70,6 +76,7 @@ namespace BlogNet.Controllers
         }
 
         [HttpPut("v1/categories/{id:int}")]
+        [Authorize]
         public async Task<IActionResult> PutAsync(
             [FromRoute] int id,
             [FromBody] EditorCategoryViewModel model,
@@ -104,6 +111,7 @@ namespace BlogNet.Controllers
         }
 
         [HttpDelete("v1/categories/{id:int}")]
+        [Authorize]
         public async Task<IActionResult> DeleteAsync(
             [FromRoute] int id,
             [FromServices] BlogDataContext context)

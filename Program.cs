@@ -1,5 +1,7 @@
 using BlogNet.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,10 +19,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
-
 
 void ConfigureService(WebApplicationBuilder builder)
 {
@@ -28,6 +30,21 @@ void ConfigureService(WebApplicationBuilder builder)
     builder.Services.AddDbContext<BlogDataContext>(
         options =>
             options.UseSqlServer(connectionString));
+
+    builder.Services
+        .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
+        {
+            options.Authority = "https://securetoken.google.com/blog-728ed";
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = "https://securetoken.google.com/blog-728ed",
+                ValidateAudience = true,
+                ValidAudience = "blog-728ed",
+                ValidateLifetime = true
+            };
+        });
 }
 
 void ConfigureMvc(WebApplicationBuilder builder)

@@ -2,6 +2,7 @@
 using BlogNet.Data;
 using BlogNet.ViewModels;
 using BlogNet.ViewModels.Posts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -96,18 +97,20 @@ namespace BlogNet.Controllers
         }
 
         [HttpGet("v1/posts/user")]
+        [Authorize]
         public async Task<IActionResult> GetByUserAsync(
-            [FromHeader] string userId,
             [FromServices] BlogDataContext context,
             [FromQuery] int page = 0,
             [FromQuery] int pageSize = 25)
         {
             try
             {
+                var user = User.Claims.FirstOrDefault(x => x.Type == "user_id")?.Value;
+
                 var count = await context.Posts.AsNoTracking().CountAsync();
                 var posts = await context
                     .Posts
-                    .Where(x => x.Author == userId)
+                    .Where(x => x.Author == user)
                     .Skip(page * pageSize)
                     .Take(pageSize)
                     .OrderByDescending(x => x.LastUpdateDate)
@@ -133,13 +136,14 @@ namespace BlogNet.Controllers
 
 
         [HttpPost("v1/posts")]
+        [Authorize]
         public async Task<IActionResult> PostAsync(
             [FromBody] EditPostViewModel model,
-            [FromHeader] string userId,
             [FromServices] BlogDataContext context)
         {
             try
             {
+                var user = User.Claims.FirstOrDefault(x => x.Type == "user_id")?.Value;
                 var post = new Post
                 {
                     Id = 0,
@@ -148,7 +152,7 @@ namespace BlogNet.Controllers
                     Slug = Post.GetSlug(model.Title),
                     LastUpdateDate = DateTime.Now.ToUniversalTime(),
                     Category = model.Category,
-                    Author = userId
+                    Author = user
                 };
                 await context.Posts.AddAsync(post);
                 await context.SaveChangesAsync();
@@ -166,14 +170,16 @@ namespace BlogNet.Controllers
         }
 
         [HttpPut("v1/posts/{id:int}")]
+        [Authorize]
         public async Task<IActionResult> PostAsync(
             [FromRoute] int id,
-            [FromHeader] string userId,
             [FromBody] EditPostViewModel model,
             [FromServices] BlogDataContext context)
         {
             try
             {
+                var user = User.Claims.FirstOrDefault(x => x.Type == "user_id")?.Value;
+                
                 var post = await context
                 .Posts
                 .FirstOrDefaultAsync(x => x.Id == id);
@@ -181,7 +187,7 @@ namespace BlogNet.Controllers
                 if (post == null)
                     return NotFound(new ResultViewModel<Post>("Conteúdo não encontrado"));
 
-                if (post.Author != userId)
+                if (post.Author != user)
                     return StatusCode(500, new ResultViewModel<Post>("02X09 - Não foi possível editar a publicação"));
 
                 post.Title = model.Title;
@@ -207,19 +213,21 @@ namespace BlogNet.Controllers
         }
 
         [HttpDelete("v1/posts/{id:int}")]
+        [Authorize]
         public async Task<IActionResult> DeleteAsync(
             [FromRoute] int id,
-            [FromHeader] string userId,
             [FromServices] BlogDataContext context)
         {
             try
             {
+                var user = User.Claims.FirstOrDefault(x => x.Type == "user_id")?.Value;
+
                 var post = await context.Posts.FirstOrDefaultAsync(x => x.Id == id);
 
                 if (post == null)
                     return NotFound(new ResultViewModel<Post>("Conteúdo não encontrado"));
 
-                if (post.Author != userId)
+                if (post.Author != user)
                 {
                     return StatusCode(500, new ResultViewModel<Post>("02X12 - Não foi possível excluir a publicação"));
                 }
