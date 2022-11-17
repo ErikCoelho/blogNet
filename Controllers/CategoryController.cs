@@ -44,7 +44,6 @@ namespace BlogNet.Controllers
         }
 
         [HttpPost("v1/categories")]
-        [Authorize]
         public async Task<IActionResult> PostAsync(
             [FromBody] EditorCategoryViewModel model,
             [FromServices] BlogDataContext context)

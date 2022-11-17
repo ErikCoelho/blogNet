@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace BlogNet.Migrations
 {
-    public partial class CreateDatabase : Migration
+    public partial class InitialCreate : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -29,10 +29,11 @@ namespace BlogNet.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    ImageUrl = table.Column<string>(type: "VARCHAR(2083)", maxLength: 2083, nullable: false),
                     Title = table.Column<string>(type: "VARCHAR(160)", maxLength: 160, nullable: false),
                     Body = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Slug = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    LastUpdateDate = table.Column<DateTime>(type: "SMALLDATETIME", maxLength: 60, nullable: false, defaultValue: new DateTime(2022, 11, 4, 0, 27, 27, 585, DateTimeKind.Utc).AddTicks(4622)),
+                    LastUpdateDate = table.Column<DateTime>(type: "SMALLDATETIME", maxLength: 60, nullable: false, defaultValue: new DateTime(2022, 11, 15, 21, 50, 17, 134, DateTimeKind.Utc).AddTicks(3823)),
                     Category = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Author = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },

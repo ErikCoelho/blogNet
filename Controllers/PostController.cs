@@ -13,34 +13,24 @@ namespace BlogNet.Controllers
     {
         [HttpGet("v1/posts")]
         public async Task<IActionResult> GetAsync (
-            [FromServices] BlogDataContext context,
-            [FromQuery] int page = 0,
-            [FromQuery] int pageSize = 25)
+            [FromServices] BlogDataContext context)
         {
             try
             {
-                var count = await context.Posts.AsNoTracking().CountAsync();
                 var posts = await context
                     .Posts
                     .AsNoTracking()
                     .Select(x =>
                     new {
                         x.Id,
+                        x.ImageUrl,
                         x.Title,
                         x.LastUpdateDate
                     })
-                    .Skip(page * pageSize)
-                    .Take(pageSize)
                     .OrderByDescending(x => x.LastUpdateDate)
                     .ToListAsync();
 
-                return Ok(new ResultViewModel<dynamic>(new
-                {
-                    total = count,
-                    page,
-                    pageSize,
-                    posts
-                }));
+                return Ok(new ResultViewModel<dynamic>(posts));
             }
             catch(Exception ex)
             {
@@ -48,7 +38,7 @@ namespace BlogNet.Controllers
             }
         }
 
-        [HttpGet("v1/posts/{id:int}")]
+        [HttpGet("v1/post/{id:int}")]
         public async Task<IActionResult> GetByIdAsync(
             [FromRoute] int id,
             [FromServices] BlogDataContext context)
@@ -67,28 +57,17 @@ namespace BlogNet.Controllers
         [HttpGet("v1/posts/category/{category}")]
         public async Task<IActionResult> GetCategoryAsync(
             [FromRoute] string category,
-            [FromServices] BlogDataContext context,
-            [FromQuery] int page = 0,
-            [FromQuery] int pageSize = 25)
+            [FromServices] BlogDataContext context)
         {
             try
             {
-                var count = await context.Posts.AsNoTracking().CountAsync();
                 var posts = await context
                     .Posts
                     .Where(x => x.Category == category)
-                    .Skip(page * pageSize)
-                    .Take(pageSize)
                     .OrderByDescending(x => x.LastUpdateDate)
                     .ToListAsync();
 
-                return Ok(new ResultViewModel<dynamic>(new
-                {
-                    total = count,
-                    page,
-                    pageSize,
-                    posts
-                }));
+                return Ok(new ResultViewModel<dynamic>(posts));
             }
             catch(Exception ex)
             {
@@ -97,35 +76,23 @@ namespace BlogNet.Controllers
         }
 
         [HttpGet("v1/posts/user")]
-        [Authorize]
         public async Task<IActionResult> GetByUserAsync(
-            [FromServices] BlogDataContext context,
-            [FromQuery] int page = 0,
-            [FromQuery] int pageSize = 25)
+            [FromServices] BlogDataContext context)
         {
             try
             {
                 var user = User.Claims.FirstOrDefault(x => x.Type == "user_id")?.Value;
 
-                var count = await context.Posts.AsNoTracking().CountAsync();
                 var posts = await context
                     .Posts
                     .Where(x => x.Author == user)
-                    .Skip(page * pageSize)
-                    .Take(pageSize)
                     .OrderByDescending(x => x.LastUpdateDate)
                     .ToListAsync();
 
                 if (posts == null)
                     return NotFound(new ResultViewModel<Post>("Você não possui nenhuma publicação"));
 
-                return Ok(new ResultViewModel<dynamic>(new
-                {
-                    total = count,
-                    page,
-                    pageSize,
-                    posts
-                }));
+                return Ok(new ResultViewModel<dynamic>(posts));
             }
             catch (Exception ex)
             {
@@ -133,7 +100,6 @@ namespace BlogNet.Controllers
             }
 
         }
-
 
         [HttpPost("v1/posts")]
         [Authorize]
@@ -147,10 +113,11 @@ namespace BlogNet.Controllers
                 var post = new Post
                 {
                     Id = 0,
+                    ImageUrl = model.ImageUrl,
                     Title = model.Title,
                     Body = model.Body,
                     Slug = Post.GetSlug(model.Title),
-                    LastUpdateDate = DateTime.Now.ToUniversalTime(),
+                    LastUpdateDate = DateTime.Now,
                     Category = model.Category,
                     Author = user
                 };
@@ -190,6 +157,7 @@ namespace BlogNet.Controllers
                 if (post.Author != user)
                     return StatusCode(500, new ResultViewModel<Post>("02X09 - Não foi possível editar a publicação"));
 
+                post.ImageUrl = model.ImageUrl;
                 post.Title = model.Title;
                 post.Body = model.Body;
                 post.Slug = Post.GetSlug(model.Title);

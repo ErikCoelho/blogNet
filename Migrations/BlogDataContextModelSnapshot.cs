@@ -70,11 +70,17 @@ namespace BlogNet.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(2083)
+                        .HasColumnType("VARCHAR(2083)")
+                        .HasColumnName("ImageUrl");
+
                     b.Property<DateTime>("LastUpdateDate")
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(60)
                         .HasColumnType("SMALLDATETIME")
-                        .HasDefaultValue(new DateTime(2022, 11, 4, 0, 27, 27, 585, DateTimeKind.Utc).AddTicks(4622))
+                        .HasDefaultValue(new DateTime(2022, 11, 15, 21, 50, 17, 134, DateTimeKind.Utc).AddTicks(3823))
                         .HasColumnName("LastUpdateDate");
 
                     b.Property<string>("Slug")

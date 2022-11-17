@@ -16,6 +16,11 @@ namespace BlogNet.Data.Mappings
                 .ValueGeneratedOnAdd()
                 .UseIdentityColumn();
 
+            builder.Property(x => x.ImageUrl)
+                .HasColumnName("ImageUrl")
+                .HasColumnType("VARCHAR")
+                .HasMaxLength(2083);
+
             builder.Property(x => x.Title)
                 .IsRequired()
                 .HasColumnName("Title")
